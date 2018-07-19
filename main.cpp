@@ -1,16 +1,30 @@
 #include <pcap.h>
 #include <stdio.h>
 
-void Print_Dest_MAC(const u_char *packet)
+void Print_MAC_Address(const u_char *packet)
 {
 	const u_char *p = NULL;
 	int i;
 
 	p = packet;
-	printf("Destination MAC Address : ");
-	for(i=0; i<8; i++)
+
+	printf("Source MAC Address      : ");
+
+	for( i = 0; i < 6; i++)
 	{
-		if(i < 7)
+		if(i < 5)
+			printf("%02x:", *(packet + i + 6) );
+		else
+			printf("%02x", *(packet + i + 6) );
+	}
+
+	printf("\n");
+
+	printf("Destination MAC Address : ");
+
+	for( i = 0;  i < 6; i++)
+	{
+		if(i < 5)
 			printf("%02x:",*(packet + i) );
 		else
 			printf("%02x", *(packet + i) );
@@ -19,25 +33,7 @@ void Print_Dest_MAC(const u_char *packet)
 	printf("\n");
 }
 
-void Print_Src_MAC(const u_char *packet)
-{
-	const u_char *p = NULL;
-	int i;	
-
-	p = packet;
-	printf("Source MAC Address      : ");
-
-	for(i=0; i<8; i++)
-	{
-		if(i < 7)
-			printf("%02x:", *(packet + i + 8) );
-		else
-			printf("%02x", *(packet + i + 8) );
-	}
-	printf("\b\n");
-}
-
-void Print_Src_IP(const u_char *packet)
+void Print_IP_Address(const u_char *packet)
 {
 	const u_char *p = NULL;
 	int i;
@@ -45,51 +41,39 @@ void Print_Src_IP(const u_char *packet)
 	p = packet;
 	printf("Source IP Address       : ");
 	
-	for(i=0; i<4; i++)
+	for( i = 0; i < 4; i++)
 	{
 		if(i < 3)
-			printf("%d.", *(packet + i + 12));
+			printf("%d.", *(packet + i + 14));
 		else
-			printf("%d", *(packet + i + 12));
+			printf("%d", *(packet + i + 14));
 	}
+
 	printf("\n");
-}
-
-void Print_Dest_IP(const u_char *packet)
-{
-	const u_char *p = NULL;
-	int i;
-
-	p = packet;
-	printf("Destination IP Address  : ");
 	
-	for(i=0; i<4; i++)
+	printf("Destination IP Address  : ");
+	for( i = 0 ; i < 4; i++)
 	{
 		if(i < 3)
-			printf("%d.", *(packet + i + 16));
+			printf("%d.", *(packet + i + 18) );
 		else
-			printf("%d", *(packet + i + 16));
-	}
+			printf("%d", *(packet + i + 18) );
+	}	
+
 	printf("\n");
 }
 
-void Print_Src_Port(const u_char *packet)
+void Print_Port(const u_char *packet)
 {
 	const u_char *p = NULL;
 	unsigned short result;
-
+	
 	p = packet;
+
 	result = *p * 0x100;
 	result += *(p + 1);
-	printf("Source Port : %d\n",result);
-}
+	printf("Source Port      : %d\n", result);
 
-void Print_Dest_Port(const u_char *packet)
-{
-	const u_char *p = NULL;
-	unsigned short result;
-	
-	p = packet;
 	result = *(p + 2) * 0x100;
 	result += *(p + 3);
 	printf("Destination Port : %d\n", result);
@@ -98,7 +82,7 @@ void Print_Dest_Port(const u_char *packet)
 void Hexdump(const u_char *packet, struct pcap_pkthdr *header)
 {
 	int i;
-	for(i = 1; i <= header->caplen; i++)
+	for(i = 1; i <= 28 + ( *(packet + 14) % 0x40 ) ; i++)
         {
                 printf("%02x ", *packet);
                 if(i % 8 == 0) printf("  ");
@@ -145,13 +129,13 @@ int main(int argc, char *argv[]){
 	printf("[*]Packet bytes : %u\n", header->caplen);	
 	printf("***********************************************\n");
 	Hexdump(packet, header);	
-	Print_Src_MAC(packet);	
-	Print_Dest_MAC(packet);
-	Print_Src_IP(packet + 14);
-	Print_Dest_IP(packet + 14);
-	Print_Src_Port(packet + 34);
-	Print_Dest_Port(packet + 34);	
+	Print_MAC_Address(packet);
+	if(*(packet + 12) == 0x08 && *(packet + 13) == 0x00)	
+		Print_IP_Address(packet + 12);
+	if(*(packet + 23) ==0x06)
+		Print_Port(packet + 34);
 	printf("***********************************************\n\n");
+
 	}
 	pcap_close(handle);
 
