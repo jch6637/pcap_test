@@ -48,8 +48,8 @@ int Print_IP_Address(const u_char *packet)
 
 	printf("Source IP Address       : %s\n", inet_ntoa(*(struct in_addr *)&ip->saddr));
 	printf("Destination IP Address  : %s\n", inet_ntoa(*(struct in_addr *)&ip->daddr));
-	
-	if(ip->protocol == 0x06)
+
+	if(ip->protocol == IPPROTO_TCP)
 		return 1;
 
 	return 0;
