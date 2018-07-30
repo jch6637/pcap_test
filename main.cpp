@@ -45,7 +45,7 @@ int Print_MAC_Address(const u_char *packet)
 int Print_IP_Address(const u_char *packet)
 {
 	struct iphdr *ip = (struct iphdr *)packet;
-	
+
 	printf("Source IP Address       : %s\n", inet_ntoa(*(struct in_addr *)&ip->saddr));
 	printf("Destination IP Address  : %s\n", inet_ntoa(*(struct in_addr *)&ip->daddr));
 	
@@ -68,17 +68,19 @@ void Hexdump(const u_char *packet, struct pcap_pkthdr *header)
 	int i, total;
 	struct iphdr *ip = (struct iphdr *)(packet + sizeof(struct ether_header));
 	struct tcphdr *tcp = (struct tcphdr *)(packet + sizeof(struct ether_header) + sizeof(struct iphdr));
+	int data_size = header->caplen - 12 - (ip->ihl * 4) - (tcp->th_off * 4);
+	
+	printf("[*]Data Size : %d\n", data_size);
+	if(data_size > 16) data_size = 16;
 
-	for (i = 1; i <=  56 ; i++)
+	for (i = 1; i <= data_size; i++)
 	{
-		printf("%02x ", *packet);
+		printf("%02x ", *(packet + i));
 		if (i % 8 == 0) printf("  ");
-		if (i % 16 == 0) printf("\n");
-		packet++;
 	}
 
 	printf("\n");
-	printf("***********************************************\n");
+	printf("**************************************************\n");
 
 }
 
@@ -111,18 +113,21 @@ int main(int argc, char *argv[]) {
 		res = pcap_next_ex(handle, &header, &packet);
 		if (res == 0) continue;
 		if (res == -1 || res == -2) break;
-
-		printf("\n[*]Capture the Packet! / Index : %d\n", ++cnt);
+		
+		printf("**************************************************\n");
+		printf("[*]Capture the Packet! / Index : %d\n", ++cnt);
 		printf("[*]Packet pointer : %p\n", packet);
 		printf("[*]Packet bytes : %u\n", header->caplen);
-		printf("***********************************************\n");
-		Hexdump(packet, header);
+		printf("**************************************************\n");
 		ip = Print_MAC_Address(packet);
 		if (ip)
 			tcp = Print_IP_Address(packet + sizeof(struct ether_header));
 		if (tcp)
 			Print_Port(packet + sizeof(struct ether_header) + sizeof(struct iphdr));
-		printf("***********************************************\n\n");
+		printf("**************************************************\n");
+		if(ip == 1 && tcp == 1)
+			Hexdump(packet, header);
+		printf("\n\n");
 
 	}
 	pcap_close(handle);
