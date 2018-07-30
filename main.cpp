@@ -75,7 +75,7 @@ void Hexdump(const u_char *packet, struct pcap_pkthdr *header)
 
 	for (i = 1; i <= data_size; i++)
 	{
-		printf("%02x ", *(packet + i));
+		printf("%02x ", *(packet + i + data_size));
 		if (i % 8 == 0) printf("  ");
 	}
 
